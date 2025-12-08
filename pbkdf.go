@@ -56,6 +56,9 @@ type Params struct {
 
 // GenerateSalt generates a random salt of the specified length.
 func GenerateSalt(length int) ([]byte, error) {
+	if length <= 0 {
+		return nil, errors.New("salt length must be positive")
+	}
 	salt := make([]byte, length)
 	if _, err := rand.Read(salt); err != nil {
 		return nil, err
@@ -97,9 +100,9 @@ func (p Params) Hash(password []byte) (string, error) {
 	b64Hash := base64.RawStdEncoding.EncodeToString(dk)
 
 	// Format: $pbkdf2-sha256$i=<iterations>,l=<keyLen>$<base64Salt>$<base64Hash>
-	// Note: We currently only support SHA-256 in the format string for simplicity,
-	// but the struct supports others. If HashFunc is not SHA256, strictly speaking
-	// we should change the identifier, but for this simple lib we'll assume SHA256 default.
+	// Note: This library currently only supports SHA-256, which is hardcoded in the
+	// format string and Verify function. While the Params struct allows setting HashFunc,
+	// only SHA-256 should be used for compatibility.
 	return fmt.Sprintf("$pbkdf2-sha256$i=%d,l=%d$%s$%s", p.Iterations, p.KeyLen, b64Salt, b64Hash), nil
 }
 
@@ -107,11 +110,11 @@ func (p Params) Hash(password []byte) (string, error) {
 func Verify(password []byte, encodedHash string) (bool, error) {
 	parts := strings.Split(encodedHash, "$")
 	if len(parts) != 5 {
-		return false, errors.New("invalid hash format")
+		return false, errors.New("invalid or corrupted hash")
 	}
 
 	if parts[1] != "pbkdf2-sha256" {
-		return false, errors.New("unsupported algorithm")
+		return false, errors.New("invalid or corrupted hash")
 	}
 
 	var iterations, keyLen int
@@ -121,26 +124,33 @@ func Verify(password []byte, encodedHash string) (bool, error) {
 		if len(kv) != 2 {
 			continue
 		}
+		var err error
 		switch kv[0] {
 		case "i":
-			iterations, _ = strconv.Atoi(kv[1])
+			iterations, err = strconv.Atoi(kv[1])
+			if err != nil {
+				return false, errors.New("invalid or corrupted hash")
+			}
 		case "l":
-			keyLen, _ = strconv.Atoi(kv[1])
+			keyLen, err = strconv.Atoi(kv[1])
+			if err != nil {
+				return false, errors.New("invalid or corrupted hash")
+			}
 		}
 	}
 
 	if iterations == 0 || keyLen == 0 {
-		return false, errors.New("invalid parameters in hash")
+		return false, errors.New("invalid or corrupted hash")
 	}
 
 	salt, err := base64.RawStdEncoding.DecodeString(parts[3])
 	if err != nil {
-		return false, err
+		return false, errors.New("invalid or corrupted hash")
 	}
 
 	decodedHash, err := base64.RawStdEncoding.DecodeString(parts[4])
 	if err != nil {
-		return false, err
+		return false, errors.New("invalid or corrupted hash")
 	}
 
 	dk := pbkdf2.Key(password, salt, iterations, keyLen, sha256.New)

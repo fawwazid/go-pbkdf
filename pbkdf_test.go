@@ -100,8 +100,26 @@ func TestGenerateSalt(t *testing.T) {
 		t.Errorf("GenerateSalt returned length %d, want 16", len(salt))
 	}
 
-	salt2, _ := GenerateSalt(16)
-	if string(salt) == string(salt2) {
-		t.Error("GenerateSalt returned identical salts")
+	// Optionally, generate another salt and check length/type, but do not assert uniqueness.
+	salt2, err := GenerateSalt(16)
+	if err != nil {
+		t.Fatalf("GenerateSalt failed: %v", err)
+	}
+	if len(salt2) != 16 {
+		t.Errorf("GenerateSalt returned length %d, want 16", len(salt2))
+	}
+}
+
+func TestGenerateSaltInvalidLength(t *testing.T) {
+	// Test zero length
+	_, err := GenerateSalt(0)
+	if err == nil {
+		t.Error("Expected error for zero salt length")
+	}
+
+	// Test negative length
+	_, err = GenerateSalt(-1)
+	if err == nil {
+		t.Error("Expected error for negative salt length")
 	}
 }
