@@ -58,7 +58,10 @@ func main() {
 	}
 	
 	// Helper: Generate a random salt
-	salt, _ := pbkdf.GenerateSalt(16)
+	salt, err := pbkdf.GenerateSalt(16)
+	if err != nil {
+		log.Fatal(err)
+	}
 	fmt.Printf("Random Salt: %x\n", salt)
 }
 ```
