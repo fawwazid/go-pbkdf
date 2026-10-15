@@ -72,11 +72,11 @@ This library is designed to comply with **NIST SP 800-132 (Recommendation for Pa
 
 Default parameters:
 - **Algorithm**: SHA-256 (Approved mode)
-- **Iterations**: 120,000 (Exceeds minimum; tuned for 2025)
+- **Iterations**: 600,000
 - **Salt Length**: 16 bytes (128 bits, meets NIST minimum)
 - **Key Length**: 32 bytes (256 bits)
 
-You can customize these parameters using the `Params` struct. Zero values will automatically use the defaults.
+You can customize these parameters using the `Params` struct. Zero values will automatically use the defaults. SHA-256 is the only supported hash function; verification rejects malformed or excessive work parameters before deriving a key.
 
 ## License
 

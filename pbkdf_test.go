@@ -23,6 +23,8 @@
 package pbkdf
 
 import (
+	"crypto/sha512"
+	"fmt"
 	"strings"
 	"testing"
 )
@@ -54,6 +56,46 @@ func TestHashAndVerify(t *testing.T) {
 	}
 	if match {
 		t.Error("Verify returned true for wrong password")
+	}
+}
+
+func TestHashRejectsInvalidParams(t *testing.T) {
+	tests := []Params{
+		{Iterations: -1},
+		{Iterations: maxIterations + 1},
+		{KeyLen: -1},
+		{KeyLen: maxKeyLength + 1},
+		{SaltLen: -1},
+		{SaltLen: maxSaltLength + 1},
+		{HashFunc: sha512.New},
+	}
+
+	for _, params := range tests {
+		if _, err := params.Hash([]byte("password")); err == nil {
+			t.Errorf("Hash(%+v) unexpectedly succeeded", params)
+		}
+	}
+}
+
+func TestVerifyRejectsResourceExhaustionParameters(t *testing.T) {
+	tests := []string{
+		fmt.Sprintf("$pbkdf2-sha256$i=%d,l=32$c2FsdA$aGFzaA", maxIterations+1),
+		fmt.Sprintf("$pbkdf2-sha256$i=1,l=%d$c2FsdA$aGFzaA", maxKeyLength+1),
+		"$pbkdf2-sha256$i=-1,l=32$c2FsdA$aGFzaA",
+		"$pbkdf2-sha256$i=1,l=-1$c2FsdA$aGFzaA",
+	}
+
+	for _, encoded := range tests {
+		if _, err := Verify([]byte("password"), encoded); err == nil {
+			t.Errorf("Verify(%q) unexpectedly succeeded", encoded)
+		}
+	}
+}
+
+func TestVerifyRejectsMismatchedDerivedKeyLength(t *testing.T) {
+	encoded := "$pbkdf2-sha256$i=1,l=32$c2FsdA$aGFzaA"
+	if _, err := Verify([]byte("password"), encoded); err == nil {
+		t.Error("Verify unexpectedly accepted a hash with the wrong decoded length")
 	}
 }
 
