@@ -1,7 +1,6 @@
 # go-pbkdf
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/fawwazid/go-pbkdf.svg)](https://pkg.go.dev/github.com/fawwazid/go-pbkdf)
-[![Go Report Card](https://goreportcard.com/badge/github.com/fawwazid/go-pbkdf)](https://goreportcard.com/report/github.com/fawwazid/go-pbkdf)
 
 A simple and secure Go library for password hashing using PBKDF2.
 
