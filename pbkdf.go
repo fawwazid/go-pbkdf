@@ -1,25 +1,3 @@
-// MIT License
-//
-// Copyright (c) 2025 Abdullah Fawwaz Qudamah
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-// SOFTWARE.
-
 package pbkdf
 
 import (
@@ -30,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"hash"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -38,13 +17,22 @@ import (
 
 // DefaultParams are the recommended parameters for PBKDF2 as per NIST SP 800-132.
 // NIST recommends a salt length of at least 128 bits (16 bytes).
-// We use 120,000 iterations for SHA-256 to meet modern security standards (2025).
+// We use 600,000 iterations for SHA-256.
 var DefaultParams = Params{
-	Iterations: 120000,
+	Iterations: 600000,
 	KeyLen:     32,
 	SaltLen:    16,
 	HashFunc:   sha256.New,
 }
+
+const (
+	maxEncodedHashLength = 4096
+	maxIterations        = 1_000_000
+	maxKeyLength         = 64
+	maxSaltLength        = 1024
+)
+
+var sha256EmptySum = sha256.Sum256(nil)
 
 // Params configures the PBKDF2 hashing.
 type Params struct {
@@ -88,6 +76,12 @@ func (p Params) Hash(password []byte) (string, error) {
 	if p.HashFunc == nil {
 		p.HashFunc = DefaultParams.HashFunc
 	}
+	if err := validateParams(p); err != nil {
+		return "", err
+	}
+	if !isSHA256(p.HashFunc) {
+		return "", errors.New("unsupported hash function: only SHA-256 is supported")
+	}
 
 	salt, err := GenerateSalt(p.SaltLen)
 	if err != nil {
@@ -108,6 +102,10 @@ func (p Params) Hash(password []byte) (string, error) {
 
 // Verify checks if a password matches the encoded hash.
 func Verify(password []byte, encodedHash string) (bool, error) {
+	if len(encodedHash) > maxEncodedHashLength {
+		return false, errors.New("invalid or corrupted hash")
+	}
+
 	parts := strings.Split(encodedHash, "$")
 	if len(parts) != 5 {
 		return false, errors.New("invalid or corrupted hash")
@@ -120,7 +118,7 @@ func Verify(password []byte, encodedHash string) (bool, error) {
 	var iterations, keyLen int
 	params := strings.Split(parts[2], ",")
 	for _, param := range params {
-		kv := strings.Split(param, "=")
+		kv := strings.SplitN(param, "=", 2)
 		if len(kv) != 2 {
 			continue
 		}
@@ -139,7 +137,7 @@ func Verify(password []byte, encodedHash string) (bool, error) {
 		}
 	}
 
-	if iterations == 0 || keyLen == 0 {
+	if iterations <= 0 || iterations > maxIterations || keyLen <= 0 || keyLen > maxKeyLength {
 		return false, errors.New("invalid or corrupted hash")
 	}
 
@@ -147,9 +145,15 @@ func Verify(password []byte, encodedHash string) (bool, error) {
 	if err != nil {
 		return false, errors.New("invalid or corrupted hash")
 	}
+	if len(salt) == 0 || len(salt) > maxSaltLength {
+		return false, errors.New("invalid or corrupted hash")
+	}
 
 	decodedHash, err := base64.RawStdEncoding.DecodeString(parts[4])
 	if err != nil {
+		return false, errors.New("invalid or corrupted hash")
+	}
+	if len(decodedHash) != keyLen {
 		return false, errors.New("invalid or corrupted hash")
 	}
 
@@ -160,4 +164,25 @@ func Verify(password []byte, encodedHash string) (bool, error) {
 	}
 
 	return false, nil
+}
+
+func validateParams(p Params) error {
+	if p.Iterations <= 0 || p.Iterations > maxIterations {
+		return fmt.Errorf("iterations must be between 1 and %d", maxIterations)
+	}
+	if p.KeyLen <= 0 || p.KeyLen > maxKeyLength {
+		return fmt.Errorf("key length must be between 1 and %d", maxKeyLength)
+	}
+	if p.SaltLen <= 0 || p.SaltLen > maxSaltLength {
+		return fmt.Errorf("salt length must be between 1 and %d", maxSaltLength)
+	}
+	return nil
+}
+
+func isSHA256(newHash func() hash.Hash) bool {
+	h := newHash()
+	if h == nil || h.Size() != sha256.Size || h.BlockSize() != sha256.BlockSize {
+		return false
+	}
+	return slices.Equal(h.Sum(nil), sha256EmptySum[:])
 }
