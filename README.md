@@ -1,14 +1,10 @@
 # go-pbkdf
 
-[![Go Reference](https://pkg.go.dev/badge/github.com/fawwazid/go-pbkdf.svg)](https://pkg.go.dev/github.com/fawwazid/go-pbkdf)
+Install: `go get github.com/fawwazid/go-pbkdf/v2@v2.0.0`.
+See [v2 release notes](CHANGELOG.md) for breaking changes.
 
-A simple and secure Go library for password hashing using PBKDF2.
-
-## Installation
-
-```bash
-go get github.com/fawwazid/go-pbkdf
-```
+PBKDF2-HMAC-SHA256 password hashing using standard-library `crypto/pbkdf2`.
+Requires Go 1.27.3; no external dependencies.
 
 ## Usage
 
@@ -16,67 +12,50 @@ go get github.com/fawwazid/go-pbkdf
 package main
 
 import (
-	"fmt"
-	"log"
-
-	"github.com/fawwazid/go-pbkdf"
+ "fmt"
+ "log"
+ pbkdf "github.com/fawwazid/go-pbkdf/v2"
 )
 
 func main() {
-	password := []byte("mySecurePassword123!")
-
-	// 1. Standard Hash (Recommended)
-	hash, err := pbkdf.Hash(password)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Printf("Standard Hash: %s\n", hash)
-
-	// 2. Custom Parameters
-	// You can specify just what you want to change, 0 values use defaults.
-	params := pbkdf.Params{
-		Iterations: 200000, // Stronger than default
-		SaltLen:    32,     // Longer salt
-	}
-	customHash, err := params.Hash(password)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Printf("Custom Hash:   %s\n", customHash)
-
-	// Verify either hash
-	match, err := pbkdf.Verify(password, customHash)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if match {
-		fmt.Println("Password matches!")
-	} else {
-		fmt.Println("Invalid password.")
-	}
-	
-	// Helper: Generate a random salt
-	salt, err := pbkdf.GenerateSalt(16)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Printf("Random Salt: %x\n", salt)
+ params := pbkdf.DefaultParams()
+ params.Iterations = 800000
+ encoded, err := params.Hash([]byte("example password"))
+ if err != nil { log.Fatal(err) }
+ matched, err := pbkdf.Verify([]byte("example password"), encoded)
+ if err != nil { log.Fatal(err) }
+ fmt.Println(matched)
 }
 ```
 
-## Security
+## API and policy
 
-This library is designed to comply with **NIST SP 800-132 (Recommendation for Password-Based Key Derivation)**.
+- `Hash(password)`: use a fresh default configuration.
+- `DefaultParams()`: return an independent configuration value.
+- `Params.Hash(password)`: every field must be explicitly populated.
+- `Verify(password, encoded)`: apply the same parameter policy as creation.
+- `GenerateSalt(length)`: generate 16–1024 random bytes.
 
-Default parameters:
-- **Algorithm**: SHA-256 (Approved mode)
-- **Iterations**: 600,000
-- **Salt Length**: 16 bytes (128 bits, meets NIST minimum)
-- **Key Length**: 32 bytes (256 bits)
+| Parameter | Default | Allowed |
+| --- | --- | --- |
+| Iterations | 600,000 | 600,000–1,000,000 |
+| SaltLen | 16 bytes | 16–1024 bytes |
+| KeyLen | 32 bytes | 32–64 bytes |
 
-You can customize these parameters using the `Params` struct. Zero values will automatically use the defaults. SHA-256 is the only supported hash function; verification rejects malformed or excessive work parameters before deriving a key.
+The iteration floor is project policy, not a NIST-mandated count. Benchmark
+work factors for your deployment. Password input is bounded at 1 MiB.
 
-## License
+The canonical record is
+`$pbkdf2-sha256$i=<iterations>,l=<keyLen>$<unpadded-base64-salt>$<unpadded-base64-key>`.
+Field order, canonical integer/base64 encodings, and all limits are checked
+before derivation. Comparison is constant-time.
 
-[MIT](LICENSE)
+## Breaking changes
+
+The mutable `DefaultParams` variable is now a function. `Params.HashFunc`,
+zero-value default substitution, and verification of weak historical settings
+have been removed. Unsupported records fail in every runtime mode.
+There are no conversion helpers or permissive verification paths.
+
+See [SECURITY.md](SECURITY.md). This is not a complete authentication system.
+Run `go test ./...` and `go vet ./...`. License: [MIT](LICENSE).
