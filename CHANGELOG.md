@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.0.0](https://github.com/fawwazid/go-pbkdf/compare/v1.0.1...v2.0.0) (2026-10-24)
+
+
+### ⚠ BREAKING CHANGES
+
+* prepare v2 security refactor ([#12](https://github.com/fawwazid/go-pbkdf/issues/12))
+
+### Features
+
+* prepare v2 security refactor ([#12](https://github.com/fawwazid/go-pbkdf/issues/12)) ([d73bc56](https://github.com/fawwazid/go-pbkdf/commit/d73bc561015a7205d4c89d6d54c66fcf0a443324))
+
 ## v2.0.0 — 2026-10-24
 
 Use standard-library PBKDF2 with one strict creation and verification policy.
