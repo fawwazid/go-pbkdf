@@ -50,6 +50,23 @@ The canonical record is
 Field order, canonical integer/base64 encodings, and all limits are checked
 before derivation. Comparison is constant-time.
 
+## Semantic versioning
+
+Releases use Semantic Versioning through Release Please. A push to `main`
+opens or updates a release pull request. Merging that generated pull request
+creates the version tag and GitHub release.
+
+Use Conventional Commits in pull request titles (the squash-merge message):
+
+- `fix: ...`, including `fix(security): ...`, creates a patch release.
+- `feat: ...` creates a minor release.
+- `fix!: ...`, `feat!: ...`, or a `BREAKING CHANGE:` footer creates a
+  major release.
+- `docs:`, `test:`, `chore:`, and `ci:` do not trigger a release.
+
+A `security:` commit appears under Security in generated release notes, but
+does not trigger a version bump by itself. Do not edit the generated changelog
+manually.
 ## Breaking changes
 
 The mutable `DefaultParams` variable is now a function. `Params.HashFunc`,
