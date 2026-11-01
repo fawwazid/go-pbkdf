@@ -1,5 +1,23 @@
 # Changelog
 
+## [2.0.1](https://github.com/fawwazid/go-pbkdf/compare/v2.0.0...v2.0.1) (2026-11-01)
+
+
+### Bug Fixes
+
+* **release:** configure semantic versioning ([#16](https://github.com/fawwazid/go-pbkdf/issues/16)) ([928137b](https://github.com/fawwazid/go-pbkdf/commit/928137b4793ab9a35357df06b71d1ab4794aba4a))
+
+
+### Documentation
+
+* clarify PBKDF2 and FIPS policy ([#15](https://github.com/fawwazid/go-pbkdf/issues/15)) ([f93dc6d](https://github.com/fawwazid/go-pbkdf/commit/f93dc6d559ba8a243d8fe09ee15bb7d4aee5d55f))
+
+
+### Chores
+
+* configure Google Release Please ([56d61a9](https://github.com/fawwazid/go-pbkdf/commit/56d61a99c3811ee6c6ee60130bf2ca4edfb143a3))
+* reset Release Please baseline ([e3ddfdc](https://github.com/fawwazid/go-pbkdf/commit/e3ddfdcd3b2bbc2c913f5ff02da4ee36c02bf52c))
+
 ## v2.0.0 — 2026-10-24
 
 Use standard-library PBKDF2 with one strict creation and verification policy.
