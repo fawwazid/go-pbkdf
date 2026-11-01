@@ -25,3 +25,11 @@ Use standard-library PBKDF2 with one strict creation and verification policy.
 ```sh
 go get github.com/fawwazid/go-pbkdf/v2@v2.0.0
 ```
+
+## v1.0.1 — 2026-10-15
+
+- Harden PBKDF2 handling and update `golang.org/x/crypto`.
+
+## v1.0.0 — 2025-12-09
+
+- Initial release of configurable PBKDF2 password hashing and verification.
