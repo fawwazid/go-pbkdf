@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.3](https://github.com/fawwazid/go-pbkdf/compare/v2.0.2...v2.0.3) (2026-11-15)
+
+
+### Bug Fixes
+
+* **security:** require patched Go toolchain ([#19](https://github.com/fawwazid/go-pbkdf/issues/19)) ([#20](https://github.com/fawwazid/go-pbkdf/issues/20)) ([4349a9b](https://github.com/fawwazid/go-pbkdf/commit/4349a9b40a4bfe5a4ff4e16d5c771a7c7674a7c4))
+
 ## [2.0.2](https://github.com/fawwazid/go-pbkdf/compare/v2.0.1...v2.0.2) (2026-11-08)
 
 
