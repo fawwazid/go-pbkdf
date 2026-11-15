@@ -4,7 +4,7 @@ Install: `go get github.com/fawwazid/go-pbkdf/v2@v2.0.0`.
 See [v2 release notes](CHANGELOG.md) for breaking changes.
 
 PBKDF2-HMAC-SHA256 password hashing using standard-library `crypto/pbkdf2`.
-Requires Go 1.27.3; no external dependencies.
+Requires Go 1.27.4; no external dependencies.
 
 ## Usage
 
